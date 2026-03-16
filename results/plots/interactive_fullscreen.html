@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎨 Gemini Embedding 2 — Интерактивная визуализация</title>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: #fff;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        header {
+            padding: 1rem 2rem;
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        header h1 { font-size: 1.3rem; }
+        .controls { display: flex; gap: 0.5rem; }
+        .btn {
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 6px;
+            background: #4f46e5;
+            color: white;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: background 0.2s;
+        }
+        .btn:hover { background: #4338ca; }
+        .btn-outline {
+            background: transparent;
+            border: 1px solid #4f46e5;
+        }
+        .btn-outline:hover { background: rgba(79, 70, 229, 0.2); }
+        
+        #plot-container {
+            flex: 1;
+            width: 100%;
+            padding: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        #plot { 
+            width: 100%; 
+            height: 100%; 
+            min-height: 600px;
+        }
+        
+        .info-panel {
+            padding: 1rem 2rem;
+            background: rgba(255,255,255,0.05);
+            font-size: 0.85rem;
+            opacity: 0.8;
+        }
+        .info-panel code {
+            background: rgba(255,255,255,0.1);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: monospace;
+        }
+        
+        /* Полноэкранный режим */
+        .fullscreen #plot-container { padding: 0; }
+        .fullscreen header, .fullscreen .info-panel { display: none; }
+        .fullscreen #plot { min-height: 100vh; }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>🧬 Gemini Embedding 2 • Визуализация</h1>
+        <div class="controls">
+            <button class="btn btn-outline" onclick="resetView()">🔄 Сброс вид</button>
+            <button class="btn" onclick="toggleFullscreen()">🖥️ Полный экран</button>
+        </div>
+    </header>
+    
+    <div id="plot-container">
+        <div id="plot"></div>
+    </div>
+    
+    <div class="info-panel">
+        <strong>Управление:</strong> 
+        🖱️ ЛКМ — вращение | 🖱️ ПКМ — панорама | 🖱️ Колесо — зум | 
+        <code>Double-click</code> — сброс | 
+        <code>F</code> — полный экран
+    </div>
+
+    <script>
+        // 👇 ВСТАВЬТЕ СЮДА СГЕНЕРИРОВАННЫЙ Plotly JSON из fig.to_json()
+        const graphJson = {"data":[{"hovertemplate":"\u003cb\u003e%{text}\u003c\u002fb\u003e\u003cbr\u003ePC1: %{x:.3f}\u003cbr\u003ePC2: %{y:.3f}\u003cbr\u003ePC3: %{z:.3f}\u003cextra\u003e\u003c\u002fextra\u003e","marker":{"color":["#60a5fa","#60a5fa","#60a5fa","#f97316","#f97316","#22c55e","#22c55e","#22c55e"],"line":{"color":"black","width":0.5},"opacity":0.9,"size":6},"mode":"markers+text","text":["Python \u0434\u043b\u044f \u0430\u043d\u0430\u043b\u0438\u0437\u0430 \u0434\u0430\u043d\u043d\u044b\u0445 \u0438 \u043c\u0430\u0448\u0438\u043d\u043d\u043e...","React \u0438 \u0441\u043e\u0432\u0440\u0435\u043c\u0435\u043d\u043d\u0430\u044f \u0444\u0440\u043e\u043d\u0442\u0435\u043d\u0434-\u0440\u0430\u0437\u0440\u0430\u0431...","PostgreSQL: \u043e\u043f\u0442\u0438\u043c\u0438\u0437\u0430\u0446\u0438\u044f \u0441\u043b\u043e\u0436\u043d\u044b\u0445 \u0437\u0430\u043f...","\u0422\u0440\u0430\u043d\u0441\u0444\u043e\u0440\u043c\u0435\u0440\u044b, BERT \u0438 \u044f\u0437\u044b\u043a\u043e\u0432\u044b\u0435 \u043c\u043e\u0434\u0435\u043b...","\u041a\u043e\u043c\u043f\u044c\u044e\u0442\u0435\u0440\u043d\u043e\u0435 \u0437\u0440\u0435\u043d\u0438\u0435 \u0441 \u0441\u0432\u0451\u0440\u0442\u043e\u0447\u043d\u044b\u043c\u0438 \u0441...","\u0420\u0435\u0446\u0435\u043f\u0442 \u0438\u0434\u0435\u0430\u043b\u044c\u043d\u043e\u0439 \u043f\u0430\u0441\u0442\u044b \u043a\u0430\u0440\u0431\u043e\u043d\u0430\u0440\u0430","\u0419\u043e\u0433\u0430 \u0434\u043b\u044f \u043d\u0430\u0447\u0438\u043d\u0430\u044e\u0449\u0438\u0445: \u0431\u0430\u0437\u043e\u0432\u044b\u0435 \u0430\u0441\u0430\u043d\u044b","\u0424\u0438\u043d\u0430\u043d\u0441\u043e\u0432\u044b\u0439 \u0430\u043d\u0430\u043b\u0438\u0437 \u0438 \u0441\u0442\u0440\u0430\u0442\u0435\u0433\u0438\u044f \u0438\u043d\u0432\u0435\u0441..."],"textfont":{"color":"white","size":9},"textposition":"top center","x":{"dtype":"f8","bdata":"Iik5KRpHy78SPHuCHYjGv7K631EJxIU\u002fCfcMnZJzx78NTan6SQzSv6yJSq2RAeU\u002fxvzpGIf4zz9no3iUwP6vvw=="},"y":{"dtype":"f8","bdata":"QnZLq6NwvT\u002fjmfOSL1LHv9fi5mm9Mry\u002f9pvFV4Hk0b98axTQb5S1vx+UfMBoKrG\u002fzsaMqE3OYD8xtdyMHGbjPw=="},"z":{"dtype":"f8","bdata":"NnN5P4Mowj9n6zGo2Ieqv1iY33XAINu\u002fj1kUXUKUxT+3UWWMz1DHP\u002fclRYZfdNI\u002fYSe8H7mY1L9VfzT+qPSQPw=="},"type":"scatter3d"}],"layout":{"template":{"data":{"histogram2dcontour":[{"type":"histogram2dcontour","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"choropleth":[{"type":"choropleth","colorbar":{"outlinewidth":0,"ticks":""}}],"histogram2d":[{"type":"histogram2d","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"heatmap":[{"type":"heatmap","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"contourcarpet":[{"type":"contourcarpet","colorbar":{"outlinewidth":0,"ticks":""}}],"contour":[{"type":"contour","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"surface":[{"type":"surface","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"mesh3d":[{"type":"mesh3d","colorbar":{"outlinewidth":0,"ticks":""}}],"scatter":[{"fillpattern":{"fillmode":"overlay","size":10,"solidity":0.2},"type":"scatter"}],"parcoords":[{"type":"parcoords","line":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterpolargl":[{"type":"scatterpolargl","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"bar":[{"error_x":{"color":"#2a3f5f"},"error_y":{"color":"#2a3f5f"},"marker":{"line":{"color":"#E5ECF6","width":0.5},"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"bar"}],"scattergeo":[{"type":"scattergeo","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterpolar":[{"type":"scatterpolar","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"histogram":[{"marker":{"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"histogram"}],"scattergl":[{"type":"scattergl","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatter3d":[{"type":"scatter3d","line":{"colorbar":{"outlinewidth":0,"ticks":""}},"marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattermap":[{"type":"scattermap","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattermapbox":[{"type":"scattermapbox","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterternary":[{"type":"scatterternary","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattercarpet":[{"type":"scattercarpet","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"carpet":[{"aaxis":{"endlinecolor":"#2a3f5f","gridcolor":"white","linecolor":"white","minorgridcolor":"white","startlinecolor":"#2a3f5f"},"baxis":{"endlinecolor":"#2a3f5f","gridcolor":"white","linecolor":"white","minorgridcolor":"white","startlinecolor":"#2a3f5f"},"type":"carpet"}],"table":[{"cells":{"fill":{"color":"#EBF0F8"},"line":{"color":"white"}},"header":{"fill":{"color":"#C8D4E3"},"line":{"color":"white"}},"type":"table"}],"barpolar":[{"marker":{"line":{"color":"#E5ECF6","width":0.5},"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"barpolar"}],"pie":[{"automargin":true,"type":"pie"}]},"layout":{"autotypenumbers":"strict","colorway":["#636efa","#EF553B","#00cc96","#ab63fa","#FFA15A","#19d3f3","#FF6692","#B6E880","#FF97FF","#FECB52"],"font":{"color":"#2a3f5f"},"hovermode":"closest","hoverlabel":{"align":"left"},"paper_bgcolor":"white","plot_bgcolor":"#E5ECF6","polar":{"bgcolor":"#E5ECF6","angularaxis":{"gridcolor":"white","linecolor":"white","ticks":""},"radialaxis":{"gridcolor":"white","linecolor":"white","ticks":""}},"ternary":{"bgcolor":"#E5ECF6","aaxis":{"gridcolor":"white","linecolor":"white","ticks":""},"baxis":{"gridcolor":"white","linecolor":"white","ticks":""},"caxis":{"gridcolor":"white","linecolor":"white","ticks":""}},"coloraxis":{"colorbar":{"outlinewidth":0,"ticks":""}},"colorscale":{"sequential":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"sequentialminus":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"diverging":[[0,"#8e0152"],[0.1,"#c51b7d"],[0.2,"#de77ae"],[0.3,"#f1b6da"],[0.4,"#fde0ef"],[0.5,"#f7f7f7"],[0.6,"#e6f5d0"],[0.7,"#b8e186"],[0.8,"#7fbc41"],[0.9,"#4d9221"],[1,"#276419"]]},"xaxis":{"gridcolor":"white","linecolor":"white","ticks":"","title":{"standoff":15},"zerolinecolor":"white","automargin":true,"zerolinewidth":2},"yaxis":{"gridcolor":"white","linecolor":"white","ticks":"","title":{"standoff":15},"zerolinecolor":"white","automargin":true,"zerolinewidth":2},"scene":{"xaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2},"yaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2},"zaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2}},"shapedefaults":{"line":{"color":"#2a3f5f"}},"annotationdefaults":{"arrowcolor":"#2a3f5f","arrowhead":0,"arrowwidth":1},"geo":{"bgcolor":"white","landcolor":"#E5ECF6","subunitcolor":"white","showland":true,"showlakes":true,"lakecolor":"white"},"title":{"x":0.05},"mapbox":{"style":"light"}}},"scene":{"camera":{"eye":{"x":1.5,"y":1.5,"z":1.5}},"xaxis":{"title":{"text":"PC1"}},"yaxis":{"title":{"text":"PC2"}},"zaxis":{"title":{"text":"PC3"}},"bgcolor":"rgba(0,0,0,0)"},"font":{"color":"white"},"margin":{"l":0,"r":0,"t":40,"b":0},"title":{"text":"\ud83e\uddec Gemini Embedding 2 \u2022 3D \u0412\u0438\u0437\u0443\u0430\u043b\u0438\u0437\u0430\u0446\u0438\u044f"},"paper_bgcolor":"rgba(0,0,0,0)","plot_bgcolor":"rgba(0,0,0,0)"}};
+        
+        let plot = null;
+        
+        function initPlot() {
+            plot = Plotly.newPlot('plot', graphJson.data, graphJson.layout, {
+                responsive: true,
+                displayModeBar: true,
+                modeBarButtonsToAdd: ['hoverClosestCartesian', 'toggleSpikelines'],
+                scrollZoom: true,
+            });
+            
+            // Горячая клавиша F для полноэкранного режима
+            document.addEventListener('keydown', (e) => {
+                if (e.key.toLowerCase() === 'f') {
+                    e.preventDefault();
+                    toggleFullscreen();
+                }
+            });
+        }
+        
+        function toggleFullscreen() {
+            document.body.classList.toggle('fullscreen');
+            if (plot) Plotly.Plots.resize(document.getElementById('plot'));
+        }
+        
+        function resetView() {
+            if (plot) {
+                Plotly.relayout('plot', {
+                    'scene.camera.eye': {x: 1.5, y: 1.5, z: 1.5},
+                    'scene.camera.up': {x: 0, y: 0, z: 1}
+                });
+            }
+        }
+        
+        // Авто-ресайз при изменении окна
+        window.addEventListener('resize', () => {
+            if (plot) Plotly.Plots.resize(document.getElementById('plot'));
+        });
+        
+        // Инициализация
+        document.addEventListener('DOMContentLoaded', initPlot);
+    </script>
+</body>
+</html>
